@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Random User Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --card-bg: #13131a;
+      --border: #2a2a3a;
+      --accent: #7efff5;
+      --accent2: #ff6bff;
+      --text: #e8e8f0;
+      --muted: #6a6a8a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    header { text-align: center; }
+
+    .label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+      opacity: 0.8;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(48px, 12vw, 72px);
+      font-weight: 800;
+      line-height: 0.9;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, var(--text) 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .subtitle { color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+
+    .card {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+    }
+
+    .card-inner {
+      padding: 36px 28px;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card:hover { border-color: #3a3a5a; }
+
+    .placeholder { text-align: center; color: var(--muted); }
+    .placeholder-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+    .placeholder p { font-size: 13px; line-height: 1.6; }
+
+    .loader { text-align: center; color: var(--muted); flex-direction: column; align-items: center; }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader p { font-size: 12px; letter-spacing: 1px; }
+
+    .user-content {
+      width: 100%;
+      animation: fadeIn 0.4s ease;
+      text-align: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .avatar-wrap {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+
+    #avatar {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      display: block;
+      object-fit: cover;
+      background: #1a1a2e;
+    }
+
+    .online-dot {
+      position: absolute;
+      bottom: 4px; right: 4px;
+      width: 14px; height: 14px;
+      background: #4ade80;
+      border-radius: 50%;
+      border: 2px solid var(--card-bg);
+    }
+
+    #userName {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 3px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      margin-bottom: 24px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .info-item {
+      background: #0f0f17;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      word-break: break-word;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .info-item:hover { border-color: var(--accent); color: var(--text); }
+    .info-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+    .error-msg {
+      color: #ff5f7a;
+      font-size: 12px;
+      text-align: center;
+      min-height: 16px;
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+    }
+
+    /* API Key input section */
+    .api-section {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .api-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .api-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .api-input {
+      flex: 1;
+      background: #0f0f17;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .api-input:focus { border-color: var(--accent); }
+    .api-input::placeholder { color: var(--muted); }
+
+    .api-save-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .api-save-btn:hover { background: rgba(126,255,245,0.1); }
+
+    .api-hint {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .api-hint a { color: var(--accent); text-decoration: none; }
+    .api-hint a:hover { text-decoration: underline; }
+
+    .api-status {
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    .api-status.ok { color: #4ade80; }
+    .api-status.err { color: #ff5f7a; }
+
+    .btn {
+      background: transparent;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 14px 36px;
+      border-radius: 50px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover::before { opacity: 0.1; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-icon { font-size: 16px; }
+
+    .counter { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+    #counter { color: var(--accent); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="label">random.user</div>
+    <h1>User<br>Generator</h1>
+    <p class="subtitle">Fetch a random human from the internet</p>
+  </header>
+
+  <!-- API Key Section -->
+  <div class="api-section" id="apiSection">
+    <div class="api-label">Anthropic API Key</div>
+    <div class="api-input-row">
+      <input
+        type="password"
+        class="api-input"
+        id="apiKeyInput"
+        placeholder="sk-ant-api03-..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="api-save-btn" onclick="saveApiKey()">Save</button>
+    </div>
+    <div class="api-hint">
+      Get your free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys
+    </div>
+    <div class="api-status" id="apiStatus"></div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="card-inner" id="cardInner">
+
+      <div class="placeholder" id="placeholder">
+        <div class="placeholder-icon">👤</div>
+        <p>Enter your API key above, then press the button below</p>
+      </div>
+
+      <div class="user-content" id="userContent" style="display:none">
+        <div class="avatar-wrap">
+          <canvas id="avatarCanvas" width="90" height="90" style="border-radius:50%; border:2px solid var(--accent); display:block;"></canvas>
+          <div class="online-dot"></div>
+        </div>
+        <h2 id="userName"></h2>
+        <div class="badge" id="userGender"></div>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-icon">✉️</span>
+            <span id="userEmail"></span>
+          </div>
+          <div class="info-item">
+            <span class="info-icon">📍</span>
+            <span id="userLocation"></span>
+          </div>
+          <div class="info-item">
+            <span class="info-icon">📞</span>
+            <span id="userPhone"></span>
+          </div>
+          <div class="info-item">
+            <span class="info-icon">🎂</span>
+            <span id="userAge"></span>
+          </div>
+          <div class="info-item">
+            <span class="info-icon">🌍</span>
+            <span id="userNat"></span>
+          </div>
+          <div class="info-item">
+            <span class="info-icon">🆔</span>
+            <span id="userUsername"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="loader" id="loader" style="display:none">
+        <div class="spinner"></div>
+        <p>Generating user…</p>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="error-msg" id="errorMsg"></p>
+
+  <button class="btn" id="fetchBtn" onclick="fetchUser()">
+    <span class="btn-icon">⚡</span>
+    Get Random User
+  </button>
+
+  <div class="counter">Users fetched: <span id="counter">0</span></div>
+</div>
+
+<script>
+  let count = 0;
+  let apiKey = '';
+
+  // ── On load: restore saved key ──────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = sessionStorage.getItem('rug_api_key');
+    if (saved) {
+      apiKey = saved;
+      document.getElementById('apiKeyInput').value = saved;
+      setApiStatus('✓ Key loaded', 'ok');
+      document.getElementById('placeholder').querySelector('p').textContent =
+        'Press the button below to generate a random user';
+    }
+  });
+
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val.startsWith('sk-ant-')) {
+      setApiStatus('⚠ Key should start with sk-ant-', 'err');
+      return;
+    }
+    apiKey = val;
+    sessionStorage.setItem('rug_api_key', val);
+    setApiStatus('✓ Key saved for this session', 'ok');
+    document.getElementById('placeholder').querySelector('p').textContent =
+      'Press the button below to generate a random user';
+  }
+
+  function setApiStatus(msg, type) {
+    const el = document.getElementById('apiStatus');
+    el.textContent = msg;
+    el.className = 'api-status ' + type;
+  }
+
+  // ── Draw avatar on canvas (no external requests) ─────────────────────────
+  function drawAvatar(firstName, lastName, gender) {
+    const canvas = document.getElementById('avatarCanvas');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Background gradient based on gender
+    const grad = ctx.createRadialGradient(w/2, h/3, 5, w/2, h/2, w/1.5);
+    if (gender === 'female') {
+      grad.addColorStop(0, '#ff6bff');
+      grad.addColorStop(1, '#7b2f9e');
+    } else {
+      grad.addColorStop(0, '#7efff5');
+      grad.addColorStop(1, '#0e6e8c');
+    }
+
+    // Circle clip
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, w/2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Initials
+    const initials = (firstName[0] + lastName[0]).toUpperCase();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = 'bold 32px Syne, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(initials, w/2, h/2);
+  }
+
+  // ── Generate user via Anthropic API ──────────────────────────────────────
+  async function generateUser() {
+    const nationalities = [
+      'American','British','Canadian','Australian','French','German',
+      'Japanese','Brazilian','Mexican','Indian','Spanish','Italian',
+      'Dutch','Swedish','Norwegian','South African','Nigerian',
+      'Argentinian','South Korean','Turkish','Egyptian','Polish'
+    ];
+    const nat = nationalities[Math.floor(Math.random() * nationalities.length)];
+    const gender = Math.random() > 0.5 ? 'male' : 'female';
+    const seed = Math.random().toString(36).substring(2, 8);
+
+    const prompt = `Generate a fictional person. Seed: ${seed}. Nationality: ${nat}. Gender: ${gender}.
+
+Return ONLY a JSON object, no markdown, no extra text:
+{
+  "firstName": "...",
+  "lastName": "...",
+  "gender": "${gender}",
+  "email": "...",
+  "city": "...",
+  "country": "...",
+  "phone": "...",
+  "age": 25,
+  "nationality": "${nat}",
+  "username": "..."
+}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+    return JSON.parse(text);
+  }
+
+  // ── Populate card ─────────────────────────────────────────────────────────
+  function populateUser(user) {
+    drawAvatar(user.firstName, user.lastName, user.gender);
+    document.getElementById('userName').textContent     = `${user.firstName} ${user.lastName}`;
+    document.getElementById('userGender').textContent   = user.gender;
+    document.getElementById('userEmail').textContent    = user.email;
+    document.getElementById('userLocation').textContent = `${user.city}, ${user.country}`;
+    document.getElementById('userPhone').textContent    = user.phone;
+    document.getElementById('userAge').textContent      = `${user.age} years old`;
+    document.getElementById('userNat').textContent      = `Nationality: ${user.nationality}`;
+    document.getElementById('userUsername').textContent = `@${user.username}`;
+  }
+
+  // ── Main ──────────────────────────────────────────────────────────────────
+  async function fetchUser() {
+    if (!apiKey) {
+      document.getElementById('errorMsg').textContent = '⚠ Please enter and save your Anthropic API key first.';
+      document.getElementById('apiKeyInput').focus();
+      return;
+    }
+
+    const btn         = document.getElementById('fetchBtn');
+    const loader      = document.getElementById('loader');
+    const placeholder = document.getElementById('placeholder');
+    const userContent = document.getElementById('userContent');
+    const errorMsg    = document.getElementById('errorMsg');
+
+    errorMsg.textContent      = '';
+    btn.disabled              = true;
+    placeholder.style.display = 'none';
+    userContent.style.display = 'none';
+    loader.style.display      = 'flex';
+
+    try {
+      const user = await generateUser();
+      populateUser(user);
+      loader.style.display      = 'none';
+      userContent.style.display = 'block';
+      count++;
+      document.getElementById('counter').textContent = count;
+    } catch (e) {
+      console.error(e);
+      loader.style.display      = 'none';
+      placeholder.style.display = 'block';
+      errorMsg.textContent      = `⚠ ${e.message}`;
+    }
+
+    btn.disabled = false;
+  }
+</script>
+</body>
+</html>
